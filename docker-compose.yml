@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  node1:
+    build: .
+    command: python ./main.py node1
+    expose:
+      - 65434
+    volumes:
+      - ./node1:/files
+    networks:
+      - p2p_network
+
+  node2:
+    build: .
+    command: python ./main.py node2
+    expose:
+      - 65434
+    volumes:
+      - ./node2:/files
+    networks:
+      - p2p_network
+
+  node3:
+    build: .
+    command: python ./main.py node3
+    expose:
+      - 65434
+    volumes:
+      - ./node3:/files
+    networks:
+      - p2p_network
+
+  node4:
+    build: .
+    command: python ./main.py node4
+    expose:
+      - 65434
+    volumes:
+      - ./node4:/files
+    networks:
+      - p2p_network
+
+networks:
+  p2p_network:
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24
+          gateway: 192.168.0.1
