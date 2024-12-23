@@ -1,6 +1,6 @@
 
 # Peer to Peer Network Using Docker
-This is repository for assignment Advanced Network Security. The nodes roles as Server and Client. This project can be improved to Federated Learning.
+This is repository for assignment Advanced Network Security. Node 1 as Server and 3 Nodes as Client. This project can be improved to Federated Learning.
 
 ## How to Use
 Make sure u must have docker on your computer.
