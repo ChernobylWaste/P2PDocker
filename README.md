@@ -1,6 +1,6 @@
 
-# Peer to Peer Network Using Docker
-This is repository for assignment Advanced Network Security. The nodes roles as Server and Client. This project can be improved to Federated Learning.
+# XGBoost Federated Learning Using P2P Docker
+This is repository for assignment Advanced Network Security. The nodes roles as Server and Client.
 
 ## How to Use
 Make sure u must have docker on your computer.
@@ -32,3 +32,6 @@ docker container ls
 ```bash
   nano <filename>
 ```
+
+# IMPORTANT!
+on lokalml.py line 80, change the model name in nodes to model1.json, model2.json, and model3.json.
