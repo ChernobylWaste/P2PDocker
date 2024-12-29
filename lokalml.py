@@ -77,7 +77,7 @@ model_final = xgb.train(
 )
 
 # Menyimpan model yang sudah di training
-model_file_path = "model1.json"
+model_file_path = # "<modelname>.json"
 model_final.save_model(model_file_path)
 print(f"Model saved to {model_file_path}")
 
