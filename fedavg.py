@@ -1,45 +1,84 @@
-import xgboost as xgb
+import warnings
+import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import accuracy_score
-import pandas as pd
-from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import xgboost as xgb
 import matplotlib.pyplot as plt
+import seaborn as sns
+import sklearn
+
+# Mengabaikan peringatan FutureWarning dan UserWarning untuk membersihkan output
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
 
 data_path = './Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv'
-df_ddos = pd.read_csv(data_path)
-df_ddos.columns = df_ddos.columns.str.lstrip()
+df = pd.read_csv(data_path)
 
-# Select columns Untuk DDoS
-columns_to_keep = [
-    'Flow Duration', 'Total Fwd Packets', 'Total Backward Packets',
-    'Total Length of Fwd Packets', 'Total Length of Bwd Packets',
-    'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean',
-    'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags',
-    'Bwd URG Flags', 'FIN Flag Count', 'SYN Flag Count',
-    'RST Flag Count', 'ACK Flag Count', 'URG Flag Count',
-    'Average Packet Size', 'Subflow Fwd Packets', 'Subflow Bwd Packets', 'Label'
-]
-df_ddos = df_ddos[columns_to_keep]
+# Menghapus spasi di awal kalimat
+df.columns = df.columns.str.lstrip()
 
-# Preprocess data
-X = df_ddos.drop('Label', axis=1)
-y = df_ddos['Label']
+# Menampilkan informasi dataset, nama kolom, dan distribusi label
+print("Jumlah Label dalam Dataset:")
+print(df['Label'].value_counts())
+
+# Memisahkan fitur (X) dan label (y) dari dataset
+X = df.drop('Label', axis=1)
+y = df['Label']
+
+# Mengganti nilai tak terhingga dengan NaN dan mengisi NaN dengan median fitur
 X.replace([np.inf, -np.inf], np.nan, inplace=True)
 X.fillna(X.median(), inplace=True)
 
-# Label encoding
+# Membuat objek LabelEncoder yang akan digunakan untuk melakukan encoding pada label kategorikal.
 label_encoder = LabelEncoder()
+# Mengidentifikasi kategori unik dalam label y dan menetapkan nilai numerik untuk setiap kategori.
 y_encoded = label_encoder.fit_transform(y)
 
-# Normalize data
+# Menormalisasi fitur menggunakan StandardScaler
 scaler = StandardScaler()
-X = scaler.fit_transform(X)
+X_scaled = scaler.fit_transform(X)
 
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+# Membuat objek XGBClassifier dengan beberapa parameter yang ditentukan.
+# Parameter use_label_encoder=False untuk menentukan apakah XGBClassifier akan menggunakan LabelEncoder internal untuk mengubah label kategorikal menjadi nilai numerik.
+# Parameter eval_metric='logloss' untuk menentukan metrik evaluasi yang digunakan selama pelatihan model.
+# Parameter random_state=42 untuk menentukan seed untuk generator random,
+model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42)
+
+# Training model XGBoost
+try:
+    model.fit(X_scaled, y_encoded)
+# Jika training ada error, maka akan mengoutput kannya. Digunakannya exception karena ada bug dari XGBoost dengan skilearn nya.
+except Exception as e:
+    print(f"Error pada saat memuat model fitting: {e}")
+
+# Menghitung dan menampilkan Importance Score pada fitur teratas
+feature_importances = model.feature_importances_
+feature_scores = pd.DataFrame({'Fitur': df.columns[:-1], 'Importance': feature_importances})
+feature_scores = feature_scores.sort_values(by='Importance', ascending=False)
+print("\nFeature Importance Score:")
+print(feature_scores.head(20))
+
+# Menyimpan 20 fitur dengan importance score teratas sebagai rekomendasi fitur
+recommended_features = feature_scores['Fitur'].head(20).values
+print("\nRekomendasi Fitur untuk Deteksi/Klasifikasi Serangan DDoS:")
+print(recommended_features)
+
+# Memilih fitur teratas
+X_selected = df[recommended_features]
+
+# Mengganti nilai tak terhingga dengan NaN
+X_selected.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+# Mengisi NaN dengan median
+X_selected.fillna(X_selected.median(), inplace=True)
+
+# Menormalisasi fitur
+X_selected_scaled = scaler.fit_transform(X_selected)
+
+# Memisahkan data menjadi set pelatihan 80% dan pengujian 20%
+X_train, X_test, y_train, y_test = train_test_split(X_selected_scaled, y_encoded, test_size=0.2, random_state=42)
 
 # Muat model dari masing-masing node
 print("\nSedang memuat model 1, 2, dan 3")

@@ -23,9 +23,9 @@ docker container ls
   docker exec -it <container-name> bash 
 ```
 
-- Change Directory to /Files
+- Change Directory to /files
 ```bash
-  cd /Files
+  cd /files
 ```
 
 - Make File Using nano
